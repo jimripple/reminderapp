@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Appointment</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { 
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { color: #2b6cb0; font-size: 28px; }
+        .btn { 
+            background: #4299e1;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #3182ce; }
+        .btn-secondary { background: #718096; }
+        .btn-secondary:hover { background: #4a5568; }
+        .form-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { 
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #4299e1;
+        }
+        .form-group small {
+            color: #718096;
+            font-size: 14px;
+            margin-top: 5px;
+            display: block;
+        }
+        .required { color: #e53e3e; }
+        .message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #e53e3e;
+        }
+        .conflict-warning {
+            background: #fef5e7;
+            color: #975a16;
+            border-left-color: #d69e2e;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .time-suggestions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .time-btn {
+            background: #edf2f7;
+            color: #4a5568;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .time-btn:hover {
+            background: #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>➕ Add New Appointment</h1>
+            <a href="/" class="btn btn-secondary">← Back to Dashboard</a>
+        </div>
+
+        <% if (message) { %>
+            <div class="message <% if (message.includes('CONFLICT')) { %>conflict-warning<% } %>">
+                <%= message %>
+            </div>
+        <% } %>
+
+        <div class="form-section">
+            <% if (typeof showConflictOverride !== 'undefined' && showConflictOverride) { %>
+                <!-- CONFLICT OVERRIDE MODE - Show appointment summary and override buttons only -->
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                    <h3 style="color: #856404; margin-bottom: 15px;">⚠️ Scheduling Conflict Detected</h3>
+                    <p style="color: #856404; margin-bottom: 15px;">
+                        You're about to create a conflicting appointment. Please review the details below and confirm if you want to proceed anyway.
+                    </p>
+                    
+                    <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #d69e2e;">
+                        <strong>📋 Appointment Details:</strong><br>
+                        <strong>Patient:</strong> <%= formData.patientName %><br>
+                        <strong>Phone:</strong> <%= formData.phone %><br>
+                        <strong>Date:</strong> <%= new Date(formData.appointmentDate).toLocaleDateString() %><br>
+                        <strong>Time:</strong> <%= formData.appointmentTime %><br>
+                        <strong>Doctor:</strong> <%= formData.doctorName %><br>
+                        <strong>Type:</strong> <%= formData.appointmentType %>
+                    </div>
+                </div>
+
+                <!-- Simple Override Form with All Data Hidden -->
+                <form method="POST" action="/add">
+                    <input type="hidden" name="overrideConflict" value="true">
+                    <input type="hidden" name="patientName" value="<%= formData.patientName %>">
+                    <input type="hidden" name="phone" value="<%= formData.phone %>">
+                    <input type="hidden" name="email" value="<%= formData.email %>">
+                    <input type="hidden" name="appointmentDate" value="<%= formData.appointmentDate %>">
+                    <input type="hidden" name="appointmentTime" value="<%= formData.appointmentTime %>">
+                    <input type="hidden" name="doctorName" value="<%= formData.doctorName %>">
+                    <input type="hidden" name="practiceName" value="<%= formData.practiceName %>">
+                    <input type="hidden" name="appointmentType" value="<%= formData.appointmentType %>">
+                    <input type="hidden" name="preVisitChecklist" value="<%= formData.preVisitChecklist %>">
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn" style="background: #e53e3e;">✅ Book Anyway (Override Conflict)</button>
+                        <a href="/add" class="btn btn-secondary">← Go Back & Change Time</a>
+                    </div>
+                </form>
+
+            <% } else { %>
+                <!-- NORMAL MODE - Show regular form -->
+                <form method="POST" action="/add">
+                    <div class="form-group">
+                    <label for="patientName">Patient Name <span class="required">*</span></label>
+                    <input type="text" id="patientName" name="patientName" required 
+                           value="<%= typeof formData !== 'undefined' && formData ? formData.patientName : '' %>"
+                           placeholder="Enter patient's full name">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number <span class="required">*</span></label>
+                    <input type="tel" id="phone" name="phone" required 
+                           placeholder="(734) 555-0123 or 7345550123">
+                    <small>US numbers only. Format will be automatically corrected.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" 
+                           placeholder="patient@example.com">
+                    <small>Optional. Used for email reminders if provided.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="appointmentDate">Appointment Date <span class="required">*</span></label>
+                    <input type="date" id="appointmentDate" name="appointmentDate" required>
+                    <small>Reminders will be sent 24 hours before this date.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="appointmentTime">Appointment Time <span class="required">*</span></label>
+                    <input type="text" id="appointmentTime" name="appointmentTime" required 
+                           placeholder="10:00 AM" onblur="formatTimeInput(this)">
+                    <div class="time-suggestions">
+                        <button type="button" class="time-btn" onclick="setTime('9:00 AM')">9:00 AM</button>
+                        <button type="button" class="time-btn" onclick="setTime('10:00 AM')">10:00 AM</button>
+                        <button type="button" class="time-btn" onclick="setTime('11:00 AM')">11:00 AM</button>
+                        <button type="button" class="time-btn" onclick="setTime('1:00 PM')">1:00 PM</button>
+                        <button type="button" class="time-btn" onclick="setTime('2:00 PM')">2:00 PM</button>
+                        <button type="button" class="time-btn" onclick="setTime('3:00 PM')">3:00 PM</button>
+                        <button type="button" class="time-btn" onclick="setTime('4:00 PM')">4:00 PM</button>
+                    </div>
+                    <small>Examples: 930am, 10:30 AM, 2pm, 1724 (military), 17:30</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="appointmentType">Appointment Type</label>
+                    <select id="appointmentType" name="appointmentType" onchange="updateChecklist()">
+                        <option value="General Checkup">General Checkup</option>
+                        <option value="Dental Cleaning">Dental Cleaning</option>
+                        <option value="Root Canal">Root Canal</option>
+                        <option value="Surgery/Extraction">Surgery/Extraction</option>
+                        <option value="Physical Exam">Physical Exam</option>
+                        <option value="Blood Work/Lab">Blood Work/Lab</option>
+                        <option value="Specialist Consultation">Specialist Consultation</option>
+                        <option value="Follow-up Visit">Follow-up Visit</option>
+                        <option value="Orthodontic Adjustment">Orthodontic Adjustment</option>
+                        <option value="Eye Exam">Eye Exam</option>
+                    </select>
+                    <small>This determines the pre-visit checklist sent to patients.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="preVisitChecklist">Pre-Visit Checklist</label>
+                    <textarea id="preVisitChecklist" name="preVisitChecklist" rows="6" 
+                              placeholder="Custom instructions for this appointment..."
+                              oninput="updatePreview()"></textarea>
+                    <small>One instruction per line. Auto-filled based on appointment type, but you can customize.</small>
+                    
+                    <div id="checklistPreview" style="margin-top: 10px; padding: 10px; background: #f7fafc; border-radius: 4px; font-size: 14px;">
+                        <!-- Checklist preview will appear here -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="doctorName">Doctor Name</label>
+                    <input type="text" id="doctorName" name="doctorName" 
+                           placeholder="Dr. Smith" value="Dr. Smith">
+                </div>
+
+                <div class="form-group">
+                    <label for="practiceName">Practice Name</label>
+                    <input type="text" id="practiceName" name="practiceName" 
+                           placeholder="Your Practice Name" value="Smile Dental">
+                </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn">Add Appointment</button>
+                        <a href="/" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            <% } %>
+        </div>
+    </div>
+
+    <script>
+        // Checklist templates
+        const checklistTemplates = {
+            "General Checkup": [
+                "Bring your insurance card",
+                "Arrive 15 minutes early for check-in",
+                "Bring a list of current medications",
+                "No eating 30 minutes before appointment"
+            ],
+            "Dental Cleaning": [
+                "Brush your teeth before coming in",
+                "Bring your insurance card",
+                "No eating 2 hours before appointment",
+                "Arrive 15 minutes early",
+                "Bring list of any medications you're taking"
+            ],
+            "Root Canal": [
+                "Take ibuprofen 1 hour before appointment",
+                "Eat a light meal beforehand (you may be numb after)",
+                "Arrange transportation home",
+                "Bring insurance card and photo ID",
+                "Plan to take the rest of the day off"
+            ],
+            "Surgery/Extraction": [
+                "DO NOT eat or drink 8 hours before appointment",
+                "Arrange someone to drive you home",
+                "Wear comfortable, loose clothing",
+                "Remove all jewelry and contact lenses",
+                "Bring insurance card and photo ID",
+                "Take prescribed pre-medication as directed"
+            ],
+            "Physical Exam": [
+                "Bring insurance card and photo ID",
+                "Bring list of current medications",
+                "Wear comfortable, easy-to-remove clothing",
+                "Arrive 15 minutes early for paperwork",
+                "Bring any previous test results or records"
+            ],
+            "Blood Work/Lab": [
+                "Fast for 12 hours if fasting labs ordered",
+                "Drink plenty of water (unless fasting)",
+                "Wear short sleeves or sleeves that roll up easily",
+                "Bring insurance card and photo ID",
+                "Bring lab order form from doctor"
+            ],
+            "Specialist Consultation": [
+                "Bring referral from your primary doctor",
+                "Bring insurance card and photo ID", 
+                "Bring all relevant medical records",
+                "Arrive 20 minutes early for new patient paperwork",
+                "Prepare list of questions for the doctor"
+            ],
+            "Follow-up Visit": [
+                "Bring insurance card",
+                "Note any changes in symptoms since last visit",
+                "Bring current medications",
+                "Arrive 10 minutes early"
+            ],
+            "Orthodontic Adjustment": [
+                "Brush and floss thoroughly before appointment",
+                "Bring your retainer case",
+                "Avoid hard/sticky foods beforehand",
+                "Bring insurance card"
+            ],
+            "Eye Exam": [
+                "Bring current glasses and contact lenses",
+                "Bring insurance card and photo ID",
+                "Don't wear eye makeup",
+                "Arrange transportation (pupils may be dilated)",
+                "Bring sunglasses for after exam"
+            ]
+        };
+
+        function updateChecklist() {
+            const appointmentType = document.getElementById('appointmentType').value;
+            const checklist = checklistTemplates[appointmentType] || checklistTemplates["General Checkup"];
+            
+            // Update textarea
+            document.getElementById('preVisitChecklist').value = checklist.join('\n');
+            
+            // Update preview
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const checklistText = document.getElementById('preVisitChecklist').value;
+            const preview = document.getElementById('checklistPreview');
+            
+            if (!checklistText.trim()) {
+                preview.innerHTML = '<strong>📋 Preview:</strong><br><em style="color: #718096;">No checklist items yet...</em>';
+                return;
+            }
+            
+            const items = checklistText.split('\n').filter(item => item.trim());
+            
+            if (items.length === 0) {
+                preview.innerHTML = '<strong>📋 Preview:</strong><br><em style="color: #718096;">No checklist items yet...</em>';
+                return;
+            }
+            
+            preview.innerHTML = '<strong>📋 Preview:</strong><br>' + 
+                               items.map((item, index) => `${index + 1}. ${item.trim()}`).join('<br>');
+        }
+
+        function setTime(time) {
+            document.getElementById('appointmentTime').value = time;
+        }
+
+        function formatTimeInput(input) {
+            const formatted = formatTime(input.value);
+            input.value = formatted;
+        }
+
+        function formatTime(timeInput) {
+            if (!timeInput) return timeInput;
+            
+            let time = timeInput.trim().toUpperCase();
+            
+            // Handle 4-digit military time (1724 = 5:24 PM)
+            if (/^\d{4}$/.test(time)) {
+                const hour24 = parseInt(time.slice(0, 2));
+                const minutes = parseInt(time.slice(2));
+                
+                // Validate hour and minutes
+                if (hour24 > 23 || minutes > 59) {
+                    alert('Invalid time: Hours must be 00-23, minutes must be 00-59');
+                    return timeInput;
+                }
+                
+                // Convert to 12-hour format
+                if (hour24 === 0) {
+                    time = `12:${time.slice(2)} AM`;
+                } else if (hour24 < 12) {
+                    time = `${hour24}:${time.slice(2)} AM`;
+                } else if (hour24 === 12) {
+                    time = `12:${time.slice(2)} PM`;
+                } else {
+                    time = `${hour24 - 12}:${time.slice(2)} PM`;
+                }
+                
+                return time;
+            }
+            
+            // Handle 3-4 digit time with AM/PM
+            if (/^\d{3,4}[AP]?M?$/i.test(time)) {
+                let digits = time.replace(/[AP]M/i, '');
+                let ampm = time.includes('P') ? 'PM' : 'AM';
+                
+                if (digits.length === 3) {
+                    let hour = digits[0];
+                    let minutes = digits.slice(1);
+                    
+                    if (parseInt(minutes) > 59) {
+                        alert('Invalid time: Minutes must be 00-59');
+                        return timeInput;
+                    }
+                    
+                    time = hour + ':' + minutes + ' ' + ampm;
+                } else if (digits.length === 4) {
+                    let hour = digits.slice(0, 2);
+                    let minutes = digits.slice(2);
+                    
+                    // Allow up to 12 for 12-hour format with AM/PM
+                    if (parseInt(hour) > 12 || parseInt(minutes) > 59) {
+                        alert('Invalid time: Hours must be 1-12, minutes must be 00-59');
+                        return timeInput;
+                    }
+                    
+                    time = hour + ':' + minutes + ' ' + ampm;
+                }
+            }
+            
+            // Handle "9:30am" -> "9:30 AM"
+            time = time.replace(/(\d{1,2}:\d{2})\s*([AP]M)/i, '$1 $2');
+            
+            // Handle "9am" -> "9:00 AM"
+            time = time.replace(/^(\d{1,2})\s*([AP]M)$/i, '$1:00 $2');
+            
+            // Handle "9:30" or "17:30" (add AM/PM based on hour)
+            if (/^\d{1,2}:\d{2}$/.test(time)) {
+                const [hourStr, minuteStr] = time.split(':');
+                const hour = parseInt(hourStr);
+                const minutes = parseInt(minuteStr);
+                
+                // Validate minutes
+                if (minutes > 59) {
+                    alert('Invalid time: Minutes must be 00-59');
+                    return timeInput;
+                }
+                
+                // Handle 24-hour format
+                if (hour > 12 && hour <= 23) {
+                    time = `${hour - 12}:${minuteStr} PM`;
+                } else if (hour === 0) {
+                    time = `12:${minuteStr} AM`;
+                } else if (hour === 12) {
+                    time = `12:${minuteStr} PM`;
+                } else if (hour > 23) {
+                    alert('Invalid time: Hours must be 00-23');
+                    return timeInput;
+                } else {
+                    time = time + (hour < 12 ? ' AM' : ' PM');
+                }
+            }
+            
+            // Handle single digit hour "9" (add :00 AM/PM)
+            if (/^\d{1,2}$/.test(time)) {
+                const hour = parseInt(time);
+                
+                if (hour > 23) {
+                    alert('Invalid time: Hours must be 00-23');
+                    return timeInput;
+                } else if (hour === 0) {
+                    time = '12:00 AM';
+                } else if (hour < 12) {
+                    time = hour + ':00 AM';
+                } else if (hour === 12) {
+                    time = '12:00 PM';
+                } else {
+                    time = (hour - 12) + ':00 PM';
+                }
+            }
+            
+            // Final validation: check if we have a valid time format
+            const timeRegex = /^(\d{1,2}):(\d{2})\s+(AM|PM)$/;
+            const match = time.match(timeRegex);
+            
+            if (match) {
+                const hour = parseInt(match[1]);
+                const minutes = parseInt(match[2]);
+                
+                // Validate ranges for 12-hour format
+                if (hour < 1 || hour > 12 || minutes > 59) {
+                    alert('Invalid time: Hours must be 1-12, minutes must be 00-59');
+                    return timeInput;
+                }
+            }
+            
+            // Ensure proper AM/PM format
+            time = time.replace(/\s*AM/i, ' AM').replace(/\s*PM/i, ' PM');
+            
+            return time;
+        }
+
+        // Set minimum date to today
+        document.getElementById('appointmentDate').min = new Date().toISOString().split('T')[0];
+        
+        // Initialize checklist on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateChecklist();
+        });
+    </script>
+</body>
+</html>

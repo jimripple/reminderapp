@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Reminder Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { 
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { color: #2b6cb0; font-size: 28px; }
+        .btn { 
+            background: #4299e1;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #3182ce; }
+        .btn-danger { background: #e53e3e; }
+        .btn-danger:hover { background: #c53030; }
+        .btn-small { padding: 5px 10px; font-size: 14px; }
+        .stats { 
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-number { font-size: 36px; font-weight: bold; color: #4299e1; }
+        .stat-label { color: #718096; margin-top: 5px; }
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .section h2 { color: #2d3748; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th:nth-child(3), td:nth-child(3) { white-space: nowrap; min-width: 120px; }
+        th { background: #f7fafc; font-weight: 600; color: #4a5568; }
+        tr:hover { background: #f7fafc; }
+        .message {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #38a169;
+            transition: opacity 0.5s ease-out;
+        }
+        .message.fade-out {
+            opacity: 0;
+        }
+        .empty-state {
+            text-align: center;
+            color: #718096;
+            padding: 40px;
+            font-style: italic;
+        }
+        .reminder-badge {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 3px;
+            display: inline-block;
+        }
+        .sent-badge {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 3px;
+            display: inline-block;
+        }
+        .pending-badge {
+            background: #fef5e7;
+            color: #975a16;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 3px;
+            display: inline-block;
+        }
+        .confirmed-badge {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 3px;
+            display: inline-block;
+        }
+        .cancelled-badge {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 3px;
+            display: inline-block;
+        }
+        .reschedule-badge {
+            background: #bee3f8;
+            color: #2c5282;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 3px;
+            display: inline-block;
+        }
+        .unsubscribed-badge {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 3px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 Appointment Reminder Dashboard</h1>
+            <a href="/add" class="btn">+ Add New Appointment</a>
+        </div>
+
+        <% if (message) { %>
+            <div class="message" id="successMessage"><%= message %></div>
+        <% } %>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number"><%= appointments.length %></div>
+                <div class="stat-label">Total Appointments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><%= upcomingReminders.length %></div>
+                <div class="stat-label">Reminders Due Tomorrow</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><%= appointments.filter(apt => apt.reminder_24h_sent || apt.reminder_sent).length %></div>
+                <div class="stat-label">Reminders Sent</div>
+            </div>
+        </div>
+
+        <% if (upcomingReminders.length > 0) { %>
+            <div class="section">
+                <h2>🔔 Upcoming Reminders (Tomorrow)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Phone</th>
+                            <th>Time</th>
+                            <th>Doctor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% upcomingReminders.forEach(appointment => { %>
+                            <tr>
+                                <td><%= appointment.patient_name %></td>
+                                <td><%= appointment.phone %></td>
+                                <td><%= appointment.appointment_time %></td>
+                                <td><%= appointment.doctor_name %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+
+        <div class="section">
+            <h2>📅 All Appointments</h2>
+            <% if (appointments.length === 0) { %>
+                <div class="empty-state">
+                    No appointments scheduled yet. <a href="/add">Add your first appointment!</a>
+                </div>
+            <% } else { %>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Phone</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Doctor</th>
+                            <th>Reminder Status</th>
+                            <th>Confirmation</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% appointments.forEach(appointment => { %>
+                            <tr>
+                                <td><%= appointment.patient_name %></td>
+                                <td><%= appointment.phone %></td>
+                                <td><%= appointment.appointment_date %></td>
+                                <td><%= appointment.appointment_time %></td>
+                                <td>
+                                    <span style="background: #e6fffa; color: #234e52; padding: 2px 6px; border-radius: 4px; font-size: 11px;">
+                                        <%= appointment.appointment_type || 'General' %>
+                                    </span>
+                                </td>
+                                <td><%= appointment.doctor_name %></td>
+                                <td>
+                                    <% if (appointment.reminder_24h_sent || appointment.reminder_sent) { %>
+                                        <span class="sent-badge">24h ✓</span>
+                                    <% } else { %>
+                                        <span class="reminder-badge">24h</span>
+                                    <% } %>
+                                    
+                                    <% if (appointment.reminder_4h_sent) { %>
+                                        <span class="sent-badge">4h ✓</span>
+                                    <% } else { %>
+                                        <span class="reminder-badge">4h</span>
+                                    <% } %>
+                                    
+                                    <% if (appointment.reminder_1h_sent) { %>
+                                        <span class="sent-badge">1h ✓</span>
+                                    <% } else { %>
+                                        <span class="reminder-badge">1h</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <% if (appointment.confirmation_status === 'confirmed') { %>
+                                        <span class="confirmed-badge">✅ Confirmed</span>
+                                    <% } else if (appointment.confirmation_status === 'cancelled') { %>
+                                        <span class="cancelled-badge">❌ Cancelled</span>
+                                    <% } else if (appointment.confirmation_status === 'reschedule_requested') { %>
+                                        <span class="reschedule-badge">🔄 Reschedule</span>
+                                    <% } else if (appointment.confirmation_status === 'unsubscribed') { %>
+                                        <span class="unsubscribed-badge">🚫 Unsubscribed</span>
+                                    <% } else { %>
+                                        <span class="pending-badge">⏳ Pending</span>
+                                    <% } %>
+                                    
+                                    <% if (appointment.confirmation_received_at) { %>
+                                        <br><small style="color: #718096;">
+                                            <%= new Date(appointment.confirmation_received_at).toLocaleDateString() %>
+                                        </small>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <a href="/edit/<%= appointment.id %>" class="btn btn-small" style="background: #38a169; margin-right: 5px;">Edit</a>
+                                    <form method="POST" action="/delete/<%= appointment.id %>" style="display: inline;" 
+                                          onsubmit="return confirm('Are you sure you want to delete this appointment?')">
+                                        <button type="submit" class="btn btn-danger btn-small">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            <% } %>
+        </div>
+    </div>
+
+    <script>
+        // Auto-dismiss success message after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const successMessage = document.getElementById('successMessage');
+            if (successMessage) {
+                setTimeout(function() {
+                    successMessage.classList.add('fade-out');
+                    setTimeout(function() {
+                        successMessage.style.display = 'none';
+                    }, 500); // Wait for fade animation to complete
+                }, 5000); // Start fading after 5 seconds
+            }
+        });
+    </script>
+</body>
+</html>
