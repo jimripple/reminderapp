@@ -391,7 +391,7 @@ app.post('/api/send-reminders', async (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Appointment Reminder Dashboard running on http://localhost:${PORT}`);
     console.log('📊 Open your browser and go to the URL above to manage appointments!');
 });
