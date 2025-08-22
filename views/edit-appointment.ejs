@@ -146,7 +146,7 @@
                     <%= message %>
                 </div>
                 
-                <% if (typeof formData !== 'undefined' && formData) { %>
+                <% if (formData) { %>
                     <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #d69e2e; margin-bottom: 15px;">
                         <strong>📋 Updated Appointment Details:</strong><br>
                         <strong>Patient:</strong> <%= formData.patientName %><br>
@@ -156,7 +156,6 @@
                         <strong>Doctor:</strong> <%= formData.doctorName %>
                     </div>
                     
-                    <!-- Override Form with Hidden Data -->
                     <form method="POST" action="/edit/<%= appointment.id %>" style="margin-bottom: 10px;">
                         <input type="hidden" name="overrideConflict" value="true">
                         <input type="hidden" name="patientName" value="<%= formData.patientName %>">
@@ -182,7 +181,6 @@
         <% } %>
 
         <% if (!message || !message.includes('CONFLICT')) { %>
-            <!-- Normal Edit Form -->
             <div class="form-section">
                 <div class="patient-info">
                     <strong>📝 Editing appointment for:</strong> <%= appointment.patient_name %><br>
@@ -194,14 +192,14 @@
                     <div class="form-group">
                         <label for="patientName">Patient Name <span class="required">*</span></label>
                         <input type="text" id="patientName" name="patientName" required 
-                               value="<%= typeof formData !== 'undefined' && formData ? formData.patientName : appointment.patient_name %>"
+                               value="<%= appointment.patient_name %>"
                                placeholder="Enter patient's full name">
                     </div>
 
                     <div class="form-group">
                         <label for="phone">Phone Number <span class="required">*</span></label>
                         <input type="tel" id="phone" name="phone" required 
-                               value="<%= typeof formData !== 'undefined' && formData ? formData.phone : appointment.phone %>"
+                               value="<%= appointment.phone %>"
                                placeholder="(734) 555-0123 or 7345550123">
                         <small>US numbers only. Format will be automatically corrected.</small>
                     </div>
@@ -209,7 +207,7 @@
                     <div class="form-group">
                         <label for="email">Email Address</label>
                         <input type="email" id="email" name="email" 
-                               value="<%= typeof formData !== 'undefined' && formData ? formData.email : (appointment.email || '') %>"
+                               value="<%= appointment.email || '' %>"
                                placeholder="patient@example.com">
                         <small>Optional. Used for email reminders if provided.</small>
                     </div>
@@ -217,14 +215,14 @@
                     <div class="form-group">
                         <label for="appointmentDate">Appointment Date <span class="required">*</span></label>
                         <input type="date" id="appointmentDate" name="appointmentDate" required
-                               value="<%= typeof formData !== 'undefined' && formData ? formData.appointmentDate : appointment.appointment_date %>">
+                               value="<%= appointment.appointment_date %>">
                         <small>Reminders will be sent 24 hours before this date.</small>
                     </div>
 
                     <div class="form-group">
                         <label for="appointmentTime">Appointment Time <span class="required">*</span></label>
                         <input type="text" id="appointmentTime" name="appointmentTime" required 
-                               value="<%= typeof formData !== 'undefined' && formData ? formData.appointmentTime : appointment.appointment_time %>"
+                               value="<%= appointment.appointment_time %>"
                                placeholder="10:00 AM"
                                onblur="formatTimeInput(this)">
                         <div class="time-suggestions">
@@ -260,33 +258,30 @@
                         <label for="preVisitChecklist">Pre-Visit Checklist</label>
                         <textarea id="preVisitChecklist" name="preVisitChecklist" rows="6" 
                                   placeholder="Custom instructions for this appointment..."
-                                  oninput="updatePreview()"><%= typeof formData !== 'undefined' && formData ? formData.preVisitChecklist : (appointment.pre_visit_checklist || '') %></textarea>
+                                  oninput="updatePreview()"><%= appointment.pre_visit_checklist || '' %></textarea>
                         <small>One instruction per line. Auto-filled based on appointment type, but you can customize.</small>
                         
                         <div id="checklistPreview" style="margin-top: 10px; padding: 10px; background: #f7fafc; border-radius: 4px; font-size: 14px;">
-                            <!-- Checklist preview will appear here -->
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="doctorName">Doctor Name</label>
                         <input type="text" id="doctorName" name="doctorName" 
-                               value="<%= typeof formData !== 'undefined' && formData ? formData.doctorName : appointment.doctor_name %>"
+                               value="<%= appointment.doctor_name %>"
                                placeholder="Dr. Smith">
                     </div>
 
                     <div class="form-group">
                         <label for="practiceName">Practice Name</label>
                         <input type="text" id="practiceName" name="practiceName" 
-                               value="<%= typeof formData !== 'undefined' && formData ? formData.practiceName : appointment.practice_name %>"
+                               value="<%= appointment.practice_name %>"
                                placeholder="Your Practice Name">
                     </div>
 
                     <div class="form-group" style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
                         <label style="display: flex; align-items: center; gap: 10px; font-weight: normal; cursor: pointer;">
-                            <input type="checkbox" id="sendUpdateNotification" name="sendUpdateNotification" checked style="width: auto; margin: 0;"> 
-                                   <%= (typeof formData !== 'undefined' && formData && formData.sendUpdateNotification) || (!formData) ? 'checked' : '' %>
-                                   style="width: auto; margin: 0;">
+                            <input type="checkbox" id="sendUpdateNotification" name="sendUpdateNotification" checked style="width: auto; margin: 0;">
                             <span>Send update notification to patient</span>
                         </label>
                         <small>Patient will receive an SMS with the updated appointment details and checklist.</small>
@@ -311,7 +306,6 @@
     </div>
 
     <script>
-        // Checklist templates
         const checklistTemplates = {
             "General Checkup": [
                 "Bring your insurance card",
@@ -387,10 +381,7 @@
             const appointmentType = document.getElementById('appointmentType').value;
             const checklist = checklistTemplates[appointmentType] || checklistTemplates["General Checkup"];
             
-            // Update textarea
             document.getElementById('preVisitChecklist').value = checklist.join('\n');
-            
-            // Update preview
             updatePreview();
         }
 
@@ -428,7 +419,6 @@
             
             let time = timeInput.trim().toUpperCase();
             
-            // Handle 4-digit military time (1724 = 5:24 PM)
             if (/^\d{4}$/.test(time)) {
                 const hour24 = parseInt(time.slice(0, 2));
                 const minutes = parseInt(time.slice(2));
@@ -540,21 +530,18 @@
             return time;
         }
 
-        // Set the current appointment type as selected
         document.addEventListener('DOMContentLoaded', function() {
-            const currentType = '<%= typeof formData !== "undefined" && formData ? formData.appointmentType : (appointment.appointment_type || "General Checkup") %>';
+            const currentType = '<%= appointment.appointment_type || "General Checkup" %>';
             const appointmentTypeSelect = document.getElementById('appointmentType');
             if (appointmentTypeSelect) {
                 appointmentTypeSelect.value = currentType;
             }
             
-            // Set minimum date to today
             const dateInput = document.getElementById('appointmentDate');
             if (dateInput) {
                 dateInput.min = new Date().toISOString().split('T')[0];
             }
             
-            // Initialize preview
             if (document.getElementById('preVisitChecklist')) {
                 updatePreview();
             }
