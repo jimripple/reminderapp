@@ -82,6 +82,11 @@
             margin-bottom: 20px;
             border-left: 4px solid #e53e3e;
         }
+        .conflict-warning {
+            background: #fef5e7;
+            color: #975a16;
+            border-left-color: #d69e2e;
+        }
         .form-actions {
             display: flex;
             gap: 10px;
@@ -118,6 +123,13 @@
             padding-top: 20px;
             border-top: 1px solid #e2e8f0;
         }
+        .conflict-override-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -127,137 +139,179 @@
             <a href="/" class="btn btn-secondary">← Back to Dashboard</a>
         </div>
 
-        <% if (message) { %>
+        <% if (message && message.includes('CONFLICT')) { %>
+            <div class="conflict-override-section">
+                <h3 style="color: #856404; margin-bottom: 15px;">⚠️ Scheduling Conflict Detected</h3>
+                <div class="message conflict-warning" style="margin-bottom: 15px; border-left: none;">
+                    <%= message %>
+                </div>
+                
+                <% if (typeof formData !== 'undefined' && formData) { %>
+                    <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #d69e2e; margin-bottom: 15px;">
+                        <strong>📋 Updated Appointment Details:</strong><br>
+                        <strong>Patient:</strong> <%= formData.patientName %><br>
+                        <strong>Phone:</strong> <%= formData.phone %><br>
+                        <strong>New Date:</strong> <%= new Date(formData.appointmentDate).toLocaleDateString() %><br>
+                        <strong>New Time:</strong> <%= formData.appointmentTime %><br>
+                        <strong>Doctor:</strong> <%= formData.doctorName %>
+                    </div>
+                    
+                    <!-- Override Form with Hidden Data -->
+                    <form method="POST" action="/edit/<%= appointment.id %>" style="margin-bottom: 10px;">
+                        <input type="hidden" name="overrideConflict" value="true">
+                        <input type="hidden" name="patientName" value="<%= formData.patientName %>">
+                        <input type="hidden" name="phone" value="<%= formData.phone %>">
+                        <input type="hidden" name="email" value="<%= formData.email %>">
+                        <input type="hidden" name="appointmentDate" value="<%= formData.appointmentDate %>">
+                        <input type="hidden" name="appointmentTime" value="<%= formData.appointmentTime %>">
+                        <input type="hidden" name="doctorName" value="<%= formData.doctorName %>">
+                        <input type="hidden" name="practiceName" value="<%= formData.practiceName %>">
+                        <input type="hidden" name="appointmentType" value="<%= formData.appointmentType %>">
+                        <input type="hidden" name="preVisitChecklist" value="<%= formData.preVisitChecklist %>">
+                        <input type="hidden" name="sendUpdateNotification" value="<%= formData.sendUpdateNotification %>">
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button type="submit" class="btn" style="background: #e53e3e;">✅ Update Anyway (Override Conflict)</button>
+                            <a href="/edit/<%= appointment.id %>" class="btn btn-secondary">← Go Back & Change Time</a>
+                        </div>
+                    </form>
+                <% } %>
+            </div>
+        <% } else if (message) { %>
             <div class="message"><%= message %></div>
         <% } %>
 
-        <div class="form-section">
-            <div class="patient-info">
-                <strong>📝 Editing appointment for:</strong> <%= appointment.patient_name %><br>
-                <strong>📅 Currently scheduled:</strong> <%= appointment.appointment_date %> at <%= appointment.appointment_time %><br>
-                <strong>🏥 Practice:</strong> <%= appointment.practice_name %>
-            </div>
-
-            <form method="POST" action="/edit/<%= appointment.id %>">
-                <div class="form-group">
-                    <label for="patientName">Patient Name <span class="required">*</span></label>
-                    <input type="text" id="patientName" name="patientName" required 
-                           value="<%= appointment.patient_name %>"
-                           placeholder="Enter patient's full name">
+        <% if (!message || !message.includes('CONFLICT')) { %>
+            <!-- Normal Edit Form -->
+            <div class="form-section">
+                <div class="patient-info">
+                    <strong>📝 Editing appointment for:</strong> <%= appointment.patient_name %><br>
+                    <strong>📅 Currently scheduled:</strong> <%= appointment.appointment_date %> at <%= appointment.appointment_time %><br>
+                    <strong>🏥 Practice:</strong> <%= appointment.practice_name %>
                 </div>
 
-                <div class="form-group">
-                    <label for="phone">Phone Number <span class="required">*</span></label>
-                    <input type="tel" id="phone" name="phone" required 
-                           value="<%= appointment.phone %>"
-                           placeholder="(734) 555-0123 or 7345550123">
-                    <small>US numbers only. Format will be automatically corrected.</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" 
-                           value="<%= appointment.email || '' %>"
-                           placeholder="patient@example.com">
-                    <small>Optional. Used for email reminders if provided.</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="appointmentDate">Appointment Date <span class="required">*</span></label>
-                    <input type="date" id="appointmentDate" name="appointmentDate" required
-                           value="<%= appointment.appointment_date %>">
-                    <small>Reminders will be sent 24 hours before this date.</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="appointmentTime">Appointment Time <span class="required">*</span></label>
-                    <input type="text" id="appointmentTime" name="appointmentTime" required 
-                           value="<%= appointment.appointment_time %>"
-                           placeholder="10:00 AM"
-                           onblur="formatTimeInput(this)">
-                    <div class="time-suggestions">
-                        <button type="button" class="time-btn" onclick="setTime('9:00 AM')">9:00 AM</button>
-                        <button type="button" class="time-btn" onclick="setTime('10:00 AM')">10:00 AM</button>
-                        <button type="button" class="time-btn" onclick="setTime('11:00 AM')">11:00 AM</button>
-                        <button type="button" class="time-btn" onclick="setTime('1:00 PM')">1:00 PM</button>
-                        <button type="button" class="time-btn" onclick="setTime('2:00 PM')">2:00 PM</button>
-                        <button type="button" class="time-btn" onclick="setTime('3:00 PM')">3:00 PM</button>
-                        <button type="button" class="time-btn" onclick="setTime('4:00 PM')">4:00 PM</button>
+                <form method="POST" action="/edit/<%= appointment.id %>">
+                    <div class="form-group">
+                        <label for="patientName">Patient Name <span class="required">*</span></label>
+                        <input type="text" id="patientName" name="patientName" required 
+                               value="<%= typeof formData !== 'undefined' && formData ? formData.patientName : appointment.patient_name %>"
+                               placeholder="Enter patient's full name">
                     </div>
-                    <small>Examples: 930am, 10:30 AM, 2pm, 1724 (military), 17:30</small>
-                </div>
 
-                <div class="form-group">
-                    <label for="appointmentType">Appointment Type</label>
-                    <select id="appointmentType" name="appointmentType" onchange="updateChecklist()">
-                        <option value="General Checkup">General Checkup</option>
-                        <option value="Dental Cleaning">Dental Cleaning</option>
-                        <option value="Root Canal">Root Canal</option>
-                        <option value="Surgery/Extraction">Surgery/Extraction</option>
-                        <option value="Physical Exam">Physical Exam</option>
-                        <option value="Blood Work/Lab">Blood Work/Lab</option>
-                        <option value="Specialist Consultation">Specialist Consultation</option>
-                        <option value="Follow-up Visit">Follow-up Visit</option>
-                        <option value="Orthodontic Adjustment">Orthodontic Adjustment</option>
-                        <option value="Eye Exam">Eye Exam</option>
-                    </select>
-                    <small>This determines the pre-visit checklist sent to patients.</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="preVisitChecklist">Pre-Visit Checklist</label>
-                    <textarea id="preVisitChecklist" name="preVisitChecklist" rows="6" 
-                              placeholder="Custom instructions for this appointment..."
-                              oninput="updatePreview()"><%= appointment.pre_visit_checklist || '' %></textarea>
-                    <small>One instruction per line. Auto-filled based on appointment type, but you can customize.</small>
-                    
-                    <div id="checklistPreview" style="margin-top: 10px; padding: 10px; background: #f7fafc; border-radius: 4px; font-size: 14px;">
-                        <!-- Checklist preview will appear here -->
+                    <div class="form-group">
+                        <label for="phone">Phone Number <span class="required">*</span></label>
+                        <input type="tel" id="phone" name="phone" required 
+                               value="<%= typeof formData !== 'undefined' && formData ? formData.phone : appointment.phone %>"
+                               placeholder="(734) 555-0123 or 7345550123">
+                        <small>US numbers only. Format will be automatically corrected.</small>
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label for="doctorName">Doctor Name</label>
-                    <input type="text" id="doctorName" name="doctorName" 
-                           value="<%= appointment.doctor_name %>"
-                           placeholder="Dr. Smith">
-                </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" 
+                               value="<%= typeof formData !== 'undefined' && formData ? formData.email : (appointment.email || '') %>"
+                               placeholder="patient@example.com">
+                        <small>Optional. Used for email reminders if provided.</small>
+                    </div>
 
-                <div class="form-group">
-                    <label for="practiceName">Practice Name</label>
-                    <input type="text" id="practiceName" name="practiceName" 
-                           value="<%= appointment.practice_name %>"
-                           placeholder="Your Practice Name">
-                </div>
+                    <div class="form-group">
+                        <label for="appointmentDate">Appointment Date <span class="required">*</span></label>
+                        <input type="date" id="appointmentDate" name="appointmentDate" required
+                               value="<%= typeof formData !== 'undefined' && formData ? formData.appointmentDate : appointment.appointment_date %>">
+                        <small>Reminders will be sent 24 hours before this date.</small>
+                    </div>
 
-                <div class="form-group" style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
-                    <label style="display: flex; align-items: center; gap: 10px; font-weight: normal; cursor: pointer;">
-                        <input type="checkbox" id="sendUpdateNotification" name="sendUpdateNotification" checked
-                               style="width: auto; margin: 0;">
-                        <span>Send update notification to patient</span>
-                    </label>
-                    <small>Patient will receive an SMS with the updated appointment details and checklist.</small>
-                </div>
+                    <div class="form-group">
+                        <label for="appointmentTime">Appointment Time <span class="required">*</span></label>
+                        <input type="text" id="appointmentTime" name="appointmentTime" required 
+                               value="<%= typeof formData !== 'undefined' && formData ? formData.appointmentTime : appointment.appointment_time %>"
+                               placeholder="10:00 AM"
+                               onblur="formatTimeInput(this)">
+                        <div class="time-suggestions">
+                            <button type="button" class="time-btn" onclick="setTime('9:00 AM')">9:00 AM</button>
+                            <button type="button" class="time-btn" onclick="setTime('10:00 AM')">10:00 AM</button>
+                            <button type="button" class="time-btn" onclick="setTime('11:00 AM')">11:00 AM</button>
+                            <button type="button" class="time-btn" onclick="setTime('1:00 PM')">1:00 PM</button>
+                            <button type="button" class="time-btn" onclick="setTime('2:00 PM')">2:00 PM</button>
+                            <button type="button" class="time-btn" onclick="setTime('3:00 PM')">3:00 PM</button>
+                            <button type="button" class="time-btn" onclick="setTime('4:00 PM')">4:00 PM</button>
+                        </div>
+                        <small>Examples: 930am, 10:30 AM, 2pm, 1724 (military), 17:30</small>
+                    </div>
 
-                <div class="form-actions">
-                    <button type="submit" class="btn">Update Appointment</button>
-                    <a href="/" class="btn btn-secondary">Cancel</a>
-                </div>
-            </form>
+                    <div class="form-group">
+                        <label for="appointmentType">Appointment Type</label>
+                        <select id="appointmentType" name="appointmentType" onchange="updateChecklist()">
+                            <option value="General Checkup">General Checkup</option>
+                            <option value="Dental Cleaning">Dental Cleaning</option>
+                            <option value="Root Canal">Root Canal</option>
+                            <option value="Surgery/Extraction">Surgery/Extraction</option>
+                            <option value="Physical Exam">Physical Exam</option>
+                            <option value="Blood Work/Lab">Blood Work/Lab</option>
+                            <option value="Specialist Consultation">Specialist Consultation</option>
+                            <option value="Follow-up Visit">Follow-up Visit</option>
+                            <option value="Orthodontic Adjustment">Orthodontic Adjustment</option>
+                            <option value="Eye Exam">Eye Exam</option>
+                        </select>
+                        <small>This determines the pre-visit checklist sent to patients.</small>
+                    </div>
 
-            <div class="delete-section">
-                <h3 style="color: #e53e3e; margin-bottom: 10px;">⚠️ Danger Zone</h3>
-                <p style="color: #718096; margin-bottom: 15px;">Once you delete this appointment, it cannot be recovered.</p>
-                <form method="POST" action="/delete/<%= appointment.id %>" style="display: inline;" 
-                      onsubmit="return confirm('Are you sure you want to permanently delete this appointment for <%= appointment.patient_name %>?')">
-                    <button type="submit" class="btn btn-danger">Delete Appointment</button>
+                    <div class="form-group">
+                        <label for="preVisitChecklist">Pre-Visit Checklist</label>
+                        <textarea id="preVisitChecklist" name="preVisitChecklist" rows="6" 
+                                  placeholder="Custom instructions for this appointment..."
+                                  oninput="updatePreview()"><%= typeof formData !== 'undefined' && formData ? formData.preVisitChecklist : (appointment.pre_visit_checklist || '') %></textarea>
+                        <small>One instruction per line. Auto-filled based on appointment type, but you can customize.</small>
+                        
+                        <div id="checklistPreview" style="margin-top: 10px; padding: 10px; background: #f7fafc; border-radius: 4px; font-size: 14px;">
+                            <!-- Checklist preview will appear here -->
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="doctorName">Doctor Name</label>
+                        <input type="text" id="doctorName" name="doctorName" 
+                               value="<%= typeof formData !== 'undefined' && formData ? formData.doctorName : appointment.doctor_name %>"
+                               placeholder="Dr. Smith">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="practiceName">Practice Name</label>
+                        <input type="text" id="practiceName" name="practiceName" 
+                               value="<%= typeof formData !== 'undefined' && formData ? formData.practiceName : appointment.practice_name %>"
+                               placeholder="Your Practice Name">
+                    </div>
+
+                    <div class="form-group" style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                        <label style="display: flex; align-items: center; gap: 10px; font-weight: normal; cursor: pointer;">
+                            <input type="checkbox" id="sendUpdateNotification" name="sendUpdateNotification" 
+                                   <%= (typeof formData !== 'undefined' && formData && formData.sendUpdateNotification) || (!formData) ? 'checked' : '' %>
+                                   style="width: auto; margin: 0;">
+                            <span>Send update notification to patient</span>
+                        </label>
+                        <small>Patient will receive an SMS with the updated appointment details and checklist.</small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn">Update Appointment</button>
+                        <a href="/" class="btn btn-secondary">Cancel</a>
+                    </div>
                 </form>
+
+                <div class="delete-section">
+                    <h3 style="color: #e53e3e; margin-bottom: 10px;">⚠️ Danger Zone</h3>
+                    <p style="color: #718096; margin-bottom: 15px;">Once you delete this appointment, it cannot be recovered.</p>
+                    <form method="POST" action="/delete/<%= appointment.id %>" style="display: inline;" 
+                          onsubmit="return confirm('Are you sure you want to permanently delete this appointment for <%= appointment.patient_name %>?')">
+                        <button type="submit" class="btn btn-danger">Delete Appointment</button>
+                    </form>
+                </div>
             </div>
-        </div>
+        <% } %>
     </div>
 
     <script>
-        // Checklist templates
+        // Checklist templates (same as before)
         const checklistTemplates = {
             "General Checkup": [
                 "Bring your insurance card",
@@ -488,14 +542,22 @@
 
         // Set the current appointment type as selected
         document.addEventListener('DOMContentLoaded', function() {
-            const currentType = '<%= appointment.appointment_type || "General Checkup" %>';
-            document.getElementById('appointmentType').value = currentType;
+            const currentType = '<%= typeof formData !== "undefined" && formData ? formData.appointmentType : (appointment.appointment_type || "General Checkup") %>';
+            const appointmentTypeSelect = document.getElementById('appointmentType');
+            if (appointmentTypeSelect) {
+                appointmentTypeSelect.value = currentType;
+            }
             
             // Set minimum date to today
-            document.getElementById('appointmentDate').min = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('appointmentDate');
+            if (dateInput) {
+                dateInput.min = new Date().toISOString().split('T')[0];
+            }
             
             // Initialize preview
-            updatePreview();
+            if (document.getElementById('preVisitChecklist')) {
+                updatePreview();
+            }
         });
     </script>
 </body>
